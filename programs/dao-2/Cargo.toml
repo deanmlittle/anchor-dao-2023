@@ -1,0 +1,26 @@
+[package]
+name = "dao-2"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "dao_2"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+# anchor-lang = { version = "0.27.0", features = ["init-if-needed"] }
+# anchor-spl = { version = "0.27.0" }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor.git", features = ["init-if-needed"] }
+anchor-spl = { git = "https://github.com/coral-xyz/anchor.git" }
+getrandom = { version = "0.2.9", features = ["custom"] }
+solana-program = "=1.14.17"
+winnow="=0.4.1"
+toml_datetime="=0.6.1"
