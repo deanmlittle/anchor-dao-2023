@@ -86,4 +86,10 @@ impl StakeState {
         require!(self.amount > 0, DaoError::InsufficientStake);
         Ok(())
     }
+
+    // Ensure staked amount > X
+    pub fn check_stake_amount(&mut self, amount: u64) -> Result<()> {
+        require!(self.amount >= amount, DaoError::InsufficientStake);
+        Ok(())
+    }
 }

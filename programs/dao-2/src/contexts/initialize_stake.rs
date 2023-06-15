@@ -58,7 +58,7 @@ impl<'info> InitializeStake<'info> {
         bumps: &BTreeMap<String, u8>
     ) -> Result<()> {
         self.stake_state.init(
-            *self.owner,
+            self.owner.key(),
             *bumps.get("stake_state").ok_or(DaoError::BumpError)?,
             *bumps.get("stake_ata").ok_or(DaoError::BumpError)?,
             *bumps.get("stake_auth").ok_or(DaoError::BumpError)?

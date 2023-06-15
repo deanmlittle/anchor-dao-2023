@@ -48,8 +48,6 @@ impl<'info> CreateProposal<'info> {
     ) -> Result<()> {
         // Make sure user has staked
         self.stake_state.check_stake()?;
-        // Add to account count
-        self.stake_state.add_account()?;
         // Check ID and add proposal
         self.config.add_proposal(id)?;
         // Check minimum quorum

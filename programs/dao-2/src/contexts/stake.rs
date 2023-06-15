@@ -15,7 +15,7 @@ pub struct Stake<'info> {
     owner_ata: Account<'info, TokenAccount>,
     #[account(
         mut,
-        seeds = [b"vault", config.seed.key().as_ref(), owner.key().as_ref()],
+        seeds = [b"vault", config.key().as_ref(), owner.key().as_ref()],
         bump = stake_state.vault_bump,
         token::mint = mint,
         token::authority = auth
@@ -51,15 +51,15 @@ pub struct Stake<'info> {
 
 impl<'info> Stake<'info> {
     pub fn deposit_tokens(
-        &self,
+        &mut self,
         amount: u64
     ) -> Result<()> {
-        self.stake_state.add_stake(amount)?;
+        self.stake_state.stake(amount)?;
 
         let accounts = TransferSpl {
             from: self.owner_ata.to_account_info(),
             to: self.stake_ata.to_account_info(),
-            authority: self.owner
+            authority: self.owner.to_account_info()
         };
 
         let ctx = CpiContext::new(
@@ -73,17 +73,18 @@ impl<'info> Stake<'info> {
         &self,
         amount: u64
     ) -> Result<()> {
-        self.stake_state.remove_stake(amount)?;
+        self.stake_state.unstake(amount)?;
+
         let accounts = TransferSpl {
             from: self.stake_ata.to_account_info(),
             to: self.owner_ata.to_account_info(),
-            authority: self.stake_auth
+            authority: self.auth.to_account_info()
         };
 
         let seeds = &[
             &b"auth"[..],
-            &[self.config.key()],
-            &[self.stake_auth.key()],
+            &self.config.key().to_bytes()[..],
+            &self.auth.key().to_bytes()[..],
             &[self.stake_state.auth_bump],
         ];
 

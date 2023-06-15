@@ -40,6 +40,16 @@ impl Proposal {
         Ok(())
     }
 
+    pub fn try_finalize(
+        &mut self
+    ) {
+        if self.votes >= self.quorum && self.check_expiry().is_ok() {
+            self.result = ProposalStatus::Succeeded
+        } else if self.votes < self.quorum && self.check_expiry().is_err() {
+            self.result = ProposalStatus::Failed
+        }
+    }
+
     pub fn check_expiry(
         &mut self
     ) -> Result<()> {
@@ -47,10 +57,24 @@ impl Proposal {
         Ok(())
     }
 
-    pub fn check_open(
+    pub fn is_open(
         &mut self
     ) -> Result<()> {
-        require!(self.result == ProposalStatus::Open, DaoError::ProposalClosed);
+        require!(self.result == ProposalStatus::Open, DaoError::InvalidProposalStatus);
+        Ok(())
+    }
+
+    pub fn is_succeeded(
+        &self
+    ) -> Result<()> {
+        require!(self.result == ProposalStatus::Succeeded, DaoError::InvalidProposalStatus);
+        Ok(())
+    }
+
+    pub fn is_failed(
+        &self
+    ) -> Result<()> {
+        require!(self.result == ProposalStatus::Failed, DaoError::InvalidProposalStatus);
         Ok(())
     }
 
@@ -59,6 +83,7 @@ impl Proposal {
         amount: u64
     ) -> Result<()> {
         self.votes = self.votes.checked_add(amount).ok_or(DaoError::Overflow)?;
+        self.try_finalize();
         Ok(())
     }
 
@@ -73,12 +98,12 @@ impl Proposal {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
 pub enum ProposalType {
-    Bounty, // Pay an address some amount of SOL
+    Bounty(Pubkey, u64), // Pay an address some amount of SOL
     Executable, // Sign some kind of instruction(s) with an accounts struct, etc
     Vote // We just want to know what people think. No money involved
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ProposalStatus {
     Open,
     Succeeded,

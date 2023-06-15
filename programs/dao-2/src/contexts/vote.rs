@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, system_program::Transfer};
 
-use crate::state::{config::DaoConfig, Proposal, StakeState, VoteState};
+use crate::{state::{config::DaoConfig, Proposal, StakeState, VoteState}, errors::DaoError};
 
 #[derive(Accounts)]
 pub struct Vote<'info> {
@@ -13,6 +13,7 @@ pub struct Vote<'info> {
     )]
     stake_state: Account<'info, StakeState>,
     #[account(
+        mut,
         seeds=[b"proposal", config.key().as_ref(), proposal.id.to_le_bytes().as_ref()],
         bump = proposal.bump,
     )]
@@ -40,35 +41,22 @@ impl<'info> Vote<'info> {
         bump: u8
     ) -> Result<()> {
         // Check proposal is open
-        self.proposal.check_open()?;
+        self.proposal.is_open()?;
         // Check proposal hasn't expired
         self.proposal.check_expiry()?;
+        // Ensure vote amount > 0
+        require!(amount > 0, DaoError::InvalidVoteAmount);
         // Add vote to proposal
         self.proposal.add_vote(amount)?;
         // Make sure user has staked
-        self.stake_state.check_stake()?;
-        // Add an account to the stake state
+        self.stake_state.check_stake_amount(amount)?;
+        // Add a vote account to the stake state
         self.stake_state.add_account()?;
         // Initialize vote
         self.vote.init(
+            self.owner.key(),
             amount,
             bump
         )
-    }
-
-    pub fn pay_proposal_fee(
-        &mut self
-    ) -> Result<()> {
-        let accounts = Transfer {
-            from: self.owner.to_account_info(),
-            to: self.treasury.to_account_info()
-        };
-
-        let ctx = CpiContext::new(
-            self.system_program.to_account_info(),
-            accounts
-        );
-
-        transfer(ctx, self.config.proposal_fee)
     }
 }
