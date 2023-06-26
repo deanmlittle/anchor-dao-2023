@@ -81,6 +81,6 @@ impl<'info> IssueTokens<'info> {
             signer_seeds
         );
 
-        mint_to(ctx, self.config.issue_price)
+        mint_to(ctx, self.config.issue_amount)
     }
 }
